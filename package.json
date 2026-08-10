@@ -1,0 +1,18 @@
+{
+  "name": "novera-website",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Novera — websites and AI receptionists. One-page site with an embedded Retell voice agent.",
+  "scripts": {
+    "dev": "vite --port 5173 --strictPort --host",
+    "build": "vite build",
+    "preview": "vite preview --port 4173"
+  },
+  "devDependencies": {
+    "vite": "^5.4.11"
+  },
+  "dependencies": {
+    "retell-client-js-sdk": "^2.0.8"
+  }
+}

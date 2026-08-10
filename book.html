@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>Book a call | Novera — Websites &amp; AI Receptionists</title>
+<meta name="description" content="Book a free thirty-minute call with Novera. We'll talk through your site, your phone line, and what happens when nobody picks up. Or call (504) 481-3624." />
+<link rel="canonical" href="https://novera.studio/book.html" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Novera" />
+<meta property="og:title" content="Book a call | Novera" />
+<meta property="og:description" content="Thirty minutes, free. Your site, your phone line, and what happens when nobody picks up." />
+<meta property="og:image" content="/og.jpg" />
+<meta property="og:url" content="https://novera.studio/book.html" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/og.jpg" />
+<meta name="theme-color" content="#05060B" />
+
+<link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://app.cal.com">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&family=Inter+Tight:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="./src/styles.css">
+</head>
+<body>
+
+<div class="vignette" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+<div id="orb" aria-hidden="true"></div>
+
+<header class="nav stuck" id="nav">
+  <a class="nav-mark" href="./index.html"><b>Novera</b><span>Studio</span></a>
+  <nav class="nav-links">
+    <a href="./index.html#work">What we build</a>
+    <a href="./index.html#line">The receptionist</a>
+    <a href="./index.html#why">Why Novera</a>
+    <a class="pill magnetic" href="tel:+15044813624">Call (504) 481-3624</a>
+  </nav>
+</header>
+
+<main class="shell">
+  <div class="wrap book-page">
+
+    <a class="back-link magnetic" href="./index.html">
+      <span class="back-arw" aria-hidden="true">←</span>
+      <span>Back to Novera</span>
+    </a>
+
+    <div class="book-head">
+      <div class="eyebrow">Book a call</div>
+      <h1>Thirty minutes. <em>Real answers.</em></h1>
+      <p class="lede">
+        Pick a time that suits you. We'll talk through your site, your phone line,
+        and what happens right now when nobody picks up.
+      </p>
+    </div>
+
+    <div class="book-grid">
+      <!-- Live Cal.com calendar -->
+      <div class="cal-shell">
+        <div id="novera-cal"></div>
+        <div class="cal-fallback" id="cal-fallback">
+          <div class="spin" aria-hidden="true"></div>
+          <div>
+            Loading the calendar…
+            <br />
+            If it doesn't appear, book at
+            <a href="https://cal.com/noah-trinh-8paljc/30min" target="_blank" rel="noopener"
+               style="color:var(--brass); border-bottom:1px solid rgba(228,196,142,.5)">cal.com/novera</a>
+            or call <a href="tel:+15044813624"
+               style="color:var(--brass); border-bottom:1px solid rgba(228,196,142,.5)">(504) 481-3624</a>.
+          </div>
+        </div>
+      </div>
+
+      <aside class="book-aside">
+        <div class="book-card">
+          <h2>What happens on the call</h2>
+          <ol>
+            <li><b>01</b><span>What you sell, and who actually calls you.</span></li>
+            <li><b>02</b><span>What happens today when the phone rings and nobody's free.</span></li>
+            <li><b>03</b><span>Whether you need a site, the phone line, or both.</span></li>
+            <li><b>04</b><span>A real number — scoped to your business, not a range.</span></li>
+          </ol>
+        </div>
+
+        <div class="book-card">
+          <h2>Rather just talk?</h2>
+          <p>The line is answered around the clock, by the same receptionist we build for clients.</p>
+          <a class="tel magnetic" href="tel:+15044813624">(504) 481-3624</a>
+          <div class="hero-cta" style="margin-top:4px">
+            <button class="btn solid magnetic" type="button" data-voice-cta>
+              <span>Talk to our assistant</span><span class="arw">→</span>
+            </button>
+          </div>
+          <p style="font-size:13px">
+            She can check this same calendar and book you in while you're on the line.
+          </p>
+        </div>
+
+        <div class="book-card">
+          <h2>No pressure</h2>
+          <p>It's a conversation, not a pitch. If Novera isn't the right fit, we'll say so on the call.</p>
+          <p>Prefer email? <a href="mailto:buildnovera@gmail.com"
+             style="color:var(--ice); border-bottom:1px solid rgba(228,196,142,.4)">buildnovera@gmail.com</a></p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <footer>
+      <span>Novera — Websites &amp; AI receptionists</span>
+      <span><a href="tel:+15044813624">(504) 481-3624</a></span>
+      <span>New Orleans, LA</span>
+      <span>© 2026</span>
+    </footer>
+  </div>
+</main>
+
+<!-- Rotating voice-agent invitation -->
+<div id="voice-invite" role="button" tabindex="0" aria-live="polite">
+  <i class="vi-dot" aria-hidden="true"></i>
+  <span class="vi-text">
+    <span id="vi-message">Would you like to book an appointment?</span>
+    <span class="vi-sub">Talk to Ava · Live</span>
+  </span>
+  <button class="vi-close" type="button" aria-label="Dismiss">&times;</button>
+</div>
+
+<!-- Live call panel -->
+<div id="voice-panel" class="voice-panel" role="dialog" aria-modal="false" aria-label="Talking to Ava">
+  <div class="vp-top">
+    <span class="vp-who"><i class="vp-dot" aria-hidden="true"></i><span id="vp-status">Connecting</span></span>
+    <button id="vp-close" class="vp-x" type="button" aria-label="Close">&times;</button>
+  </div>
+  <canvas id="vp-wave" aria-hidden="true"></canvas>
+  <div class="vp-name">Ava — Novera</div>
+  <p class="vp-hint" id="vp-hint">Ask her to find you a time and she'll book it on this calendar.</p>
+  <div class="vp-actions">
+    <button id="vp-mute" class="vp-btn" type="button">Mute</button>
+    <button id="vp-hang" class="vp-btn danger" type="button">End call</button>
+  </div>
+</div>
+
+<!-- Brand-native launcher -->
+<button id="voice-fab" class="voice-fab" type="button" aria-label="Talk to our assistant">
+  <span class="vf-ico" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="9" y="2" width="6" height="11" rx="3"/>
+      <path d="M5 10v1a7 7 0 0 0 14 0v-1"/>
+      <line x1="12" y1="19" x2="12" y2="22"/>
+    </svg>
+  </span>
+  <span class="vf-label">Talk to us</span>
+</button>
+
+<div id="mic-notice" role="alert"></div>
+
+<script type="module" src="./src/book.js"></script>
+</body>
+</html>

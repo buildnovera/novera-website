@@ -1,0 +1,7 @@
+# Never upload secrets, even though only dist/ is served.
+.env
+.env.*
+!.env.example
+
+node_modules
+.claude
