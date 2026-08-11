@@ -1,5 +1,6 @@
 import './voice.js';
 import './reviews.js';
+import { init as initAnalytics, wireCommonLinks } from './analytics.js';
 
 /* ============================================================================
    NOVERA — site behaviour
@@ -8,7 +9,11 @@ import './reviews.js';
    2. Beams      — SVG light paths behind the reviews panel
    3. Interaction— anime.js driven entrance, reveals, tilt, magnetic buttons
    4. Voice      — see ./voice.js (shared with the booking page)
+   5. Analytics  — see ./analytics.js (shared with the booking page)
    ========================================================================== */
+
+initAnalytics();
+wireCommonLinks();
 
 /* ============================================================================
    1. LIGHTFALL — ported to raw WebGL (no ogl dependency)

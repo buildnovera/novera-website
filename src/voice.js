@@ -10,6 +10,8 @@
    Flow: mic preflight → POST /v2/create-web-call (public key) → SDK connects
    with the returned access token.
    ========================================================================== */
+import { track } from './analytics.js';
+
 (function () {
   const PHONE_HREF = 'tel:+15044813624';
   const PHONE_TEXT = '(504) 481-3624';
@@ -42,6 +44,9 @@
   const hideNotice = () => notice && notice.classList.remove('on');
 
   const micProblem = (kind) => {
+    // Worth counting: a visitor who wanted to talk and was stopped by their
+    // own hardware is a lost conversion, not a disinterested one.
+    track('voice_call_failed', { reason: 'mic_' + kind });
     const call = `<a href="${PHONE_HREF}">${PHONE_TEXT}</a>`;
     if (kind === 'missing')
       showNotice(`No microphone found. Plug one in and try again — or just call us at ${call}.`);
@@ -135,7 +140,7 @@
   };
 
   /* ---------- the call itself ---------- */
-  let client = null, starting = false, muted = false;
+  let client = null, starting = false, muted = false, connectedAt = 0;
 
   // The voice SDK is ~470 kB, and most visitors never open a call — so it is
   // fetched on demand rather than shipped in the initial bundle. Warmed up
@@ -146,6 +151,8 @@
   function wireClient(c) {
     c.on('call_started', () => {
       callLive = true;
+      connectedAt = Date.now();
+      track('voice_call_connected', { page: location.pathname });
       setStatus('Connected', true);
       setHint('Go ahead — she’s listening.');
     });
@@ -153,12 +160,20 @@
     c.on('agent_start_talking', () => { agentTalking = true; });
     c.on('agent_stop_talking', () => { agentTalking = false; });
     c.on('call_ended', () => {
+      // Duration separates a real conversation from an instant hang-up, which
+      // is the difference between an engaged visitor and a curious click.
+      track('voice_call_ended', {
+        duration_seconds: connectedAt ? Math.round((Date.now() - connectedAt) / 1000) : 0
+      });
+      connectedAt = 0;
       callLive = false; agentTalking = false;
       setStatus('Call ended', false);
       setHint('Thanks for calling. Start another any time.');
       setTimeout(closePanel, 2200);
     });
     c.on('error', (err) => {
+      track('voice_call_failed', { reason: 'dropped' });
+      connectedAt = 0;
       callLive = false; agentTalking = false;
       console.error('Retell call error:', err);
       setStatus('Disconnected', false);
@@ -174,6 +189,7 @@
   async function startCall() {
     if (starting || callLive) { openPanel(); return; }
     starting = true;
+    track('voice_call_requested', { page: location.pathname });
     stopInvite();
 
     if (!(await micReady())) { starting = false; return; }
@@ -211,6 +227,12 @@
       console.error('Could not start the call:', err);
       closePanel();
       const offline = !navigator.onLine;
+      // A 401 here is almost always the Retell domain allowlist, so the reason
+      // is worth keeping rather than collapsing every failure into one bucket.
+      track('voice_call_failed', {
+        reason: offline ? 'offline' : 'connect_failed',
+        detail: String((err && err.message) || err).slice(0, 120)
+      });
       showNotice(
         (offline
           ? 'You appear to be offline. '

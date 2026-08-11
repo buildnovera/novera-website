@@ -6,6 +6,7 @@
    · confetti burst and a synthesised pop on submit
    Confetti and sound are generated here — no libraries, no audio files.
    ========================================================================== */
+import { track } from './analytics.js';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const MAILTO = 'buildnovera@gmail.com';
@@ -368,6 +369,11 @@ function submit() {
   if (!rating) { showError('Pick a star rating first — swipe across the stars.'); return; }
   if (comment.length < 3) { showError('Add a line or two about how it went.'); return; }
   errorEl.hidden = true;
+
+  // Counts the intent to submit. Whether the mail client actually sent it is
+  // not something a static page can observe, so this is not proof of a review
+  // landing in the inbox — only that someone got all the way to the button.
+  track('review_submitted', { rating, has_website: Boolean(site) });
 
   // No backend on a static site, so the review is handed to the mail client.
   const subject = `Novera review — ${rating} star${rating === 1 ? '' : 's'}`;

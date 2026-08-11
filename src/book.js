@@ -6,9 +6,16 @@
    land on the same calendar and respect the same availability.
    ========================================================================== */
 import './voice.js';
+import { init as initAnalytics, track, identify, wireCommonLinks } from './analytics.js';
 
 const CAL_LINK = 'noah-trinh-8paljc/30min';
 const NAMESPACE = '30min';
+
+initAnalytics();
+wireCommonLinks();
+// Named explicitly rather than leaning on the automatic pageview, so the
+// funnel step reads as a funnel step when you build it in PostHog.
+track('booking_page_viewed');
 
 /* ---------- Cal.com inline embed ---------- */
 (function () {
@@ -64,6 +71,42 @@ const NAMESPACE = '30min';
     },
     hideEventTypeDetails: false,
     layout: 'month_view'
+  });
+
+  /* ---------- the conversion ---------- */
+  // Everything upstream exists to reach this callback. `bookingSuccessful`
+  // fires inside the iframe the moment a fresh booking lands, and it is the
+  // only point at which this page learns who booked — so it is also where the
+  // person is identified by email. That identify() is what lets Stripe revenue
+  // find its way back to a visitor later, which is the whole basis of LTV.
+  //
+  // Cal nests the attendee differently across embed versions, so the email is
+  // dug out defensively rather than from one assumed path.
+  const attendeeOf = (data) => {
+    const lists = [data.attendees, data.booking && data.booking.attendees];
+    for (const list of lists) {
+      if (Array.isArray(list) && list.length) return list[0];
+    }
+    return {};
+  };
+
+  Cal.ns[NAMESPACE]('on', {
+    action: 'bookingSuccessful',
+    callback: (e) => {
+      const data = (e && e.detail && e.detail.data) || {};
+      const booking = data.booking || {};
+      const attendee = attendeeOf(data);
+
+      identify(attendee.email, { name: attendee.name || undefined });
+      track('booking_confirmed', {
+        source: 'inline_embed',
+        event_type: (data.eventType && data.eventType.slug) || NAMESPACE,
+        booking_uid: booking.uid || data.uid || undefined,
+        // No phone number on purpose. Cal's phone field is hidden and the
+        // agent is forbidden from asking before the appointment is confirmed.
+        matched_email: Boolean(attendee.email)
+      });
+    }
   });
 
   // Hide the loading state once the embed has actually put something on screen.
