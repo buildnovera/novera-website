@@ -123,6 +123,18 @@ out defensively from more than one path. It was verified against a synthetic
 payload, not a live booking — make one real test booking and confirm
 `matched_email` is `true` before trusting the numbers.
 
+### Reading the numbers back
+
+Two ways, and they are not alternatives so much as different jobs:
+
+- **PostHog's own dashboard** — always current, nothing to maintain.
+- **`dashboard/`** — a private, password-protected page that reads the funnel
+  live from PostHog and presents conversion rate and LTV the way Novera thinks
+  about them. It is a **separate deployment** with its own `README`, because it
+  needs server-side code to hold the personal API key and GitHub Pages cannot
+  run any. Nothing in `dashboard/` is included in `npm run build`, so it can
+  never be served from the public Pages site.
+
 ## Deploying
 
 `.github/workflows/deploy.yml` builds and publishes to GitHub Pages on every

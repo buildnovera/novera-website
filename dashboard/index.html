@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Novera — Conversion &amp; LTV</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📈</text></svg>">
+<style>
+  /* Tokens mirror the Novera site so the instrument wears the brand it measures.
+     The funnel ramp is a single hue, light→dark, checked against both surfaces. */
+  :root {
+    --ground:#F4F6FC; --surface:#FFFFFF; --surface-sub:#EEF2FB;
+    --line:#DDE4F2; --line-soft:#E9EEF8;
+    --ink:#101838; --ink-2:#38426A; --muted:#5A6484;
+    --accent:#8A6A2F; --accent-soft:#F3E8D2;
+    --good:#1B7A4B; --danger:#A3282B;
+    --s1:#7FA8EC; --s2:#5182DF; --s3:#3457C2; --s4:#222C98;
+    --shadow:0 1px 2px rgba(16,24,56,.05), 0 8px 24px rgba(16,24,56,.06);
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:#080F2E; --surface:#101A45; --surface-sub:#16214F;
+      --line:#26325F; --line-soft:#1B2650;
+      --ink:#E4EBFF; --ink-2:#C3CDEC; --muted:#8791AB;
+      --accent:#E4C48E; --accent-soft:#2A2A4A;
+      --good:#5FD39B; --danger:#FF9B9B;
+      --s1:#C6D8FF; --s2:#9BC1FF; --s3:#7A9BF2; --s4:#6C5CE8;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.28);
+    }
+  }
+
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:var(--sans); font-size:15px; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:40px 24px 72px; display:flex; flex-direction:column; gap:28px; }
+
+  .eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  h1 { font-family:var(--serif); font-weight:400; font-size:clamp(28px,4.2vw,40px); line-height:1.1; margin:0; text-wrap:balance; letter-spacing:-.01em; }
+  header { display:flex; flex-direction:column; gap:10px; }
+  .sub { margin:0; color:var(--muted); max-width:62ch; }
+
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:24px; box-shadow:var(--shadow); }
+  .card-head { display:flex; justify-content:space-between; align-items:baseline; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
+  .card-head h2 { font-size:15px; font-weight:600; margin:0; }
+  .card-head p { margin:4px 0 0; color:var(--muted); font-size:13px; }
+
+  button {
+    font-family:var(--sans); font-size:13px; font-weight:500; color:var(--ink);
+    background:var(--surface-sub); border:1px solid var(--line); border-radius:8px;
+    padding:8px 14px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  button:hover { border-color:var(--muted); }
+  button:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  button[aria-pressed="true"] { background:var(--accent-soft); border-color:var(--accent); color:var(--ink); }
+  button:disabled { opacity:.55; cursor:default; }
+
+  /* one filter row, above everything it scopes */
+  .toolbar { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; }
+  .ranges { display:flex; gap:8px; }
+  .status { display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--muted); font-family:var(--mono); flex-wrap:wrap; }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--good); flex:none; }
+  .dot.stale { background:var(--accent); }
+  .dot.err { background:var(--danger); }
+
+  .banner { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; padding:12px 14px; font-size:13px; color:var(--ink-2); background:var(--surface-sub); }
+  .banner.err { border-left-color:var(--danger); }
+  .banner code { font-family:var(--mono); font-size:11.5px; word-break:break-word; }
+
+  .hero-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; }
+  @media (max-width:720px) { .hero-row { grid-template-columns:1fr; } }
+  .hero .label { font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); font-family:var(--mono); }
+  /* hero figure: same sans as everything else, proportional figures */
+  .hero .figure { font-family:var(--sans); font-size:clamp(48px,8vw,68px); font-weight:600; line-height:1; letter-spacing:-.03em; margin:12px 0 6px; }
+  /* LTV moves slowly; conversion rate is the number that moves week to week,
+     so it stays the single lead figure and this sits one step down. */
+  .hero.secondary .figure { font-size:clamp(34px,5vw,44px); }
+  .hero .figure.empty { font-size:clamp(26px,3.4vw,32px); color:var(--muted); font-weight:400; }
+  .hero .caption { color:var(--muted); font-size:13px; margin:0; }
+  .hero .formula { font-family:var(--mono); font-size:11.5px; color:var(--muted); margin:14px 0 0; padding-top:12px; border-top:1px solid var(--line-soft); overflow-x:auto; white-space:nowrap; }
+
+  .funnel { display:flex; flex-direction:column; }
+  .stage { display:flex; flex-direction:column; gap:7px; }
+  .stage-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .stage-name { font-size:13.5px; color:var(--ink-2); display:flex; align-items:center; gap:8px; }
+  .swatch { width:9px; height:9px; border-radius:2px; flex:none; }
+  .stage-val { font-family:var(--mono); font-size:13.5px; font-variant-numeric:tabular-nums; color:var(--ink); }
+  .stage-pct { color:var(--muted); font-size:12px; font-family:var(--mono); }
+  .track { height:34px; background:var(--surface-sub); border-radius:5px; overflow:hidden; }
+  .fill { height:100%; border-radius:5px 4px 4px 5px; min-width:3px; transition:width .5s cubic-bezier(.16,1,.3,1); }
+  .dropoff { display:flex; align-items:center; gap:8px; margin:9px 0 9px 4px; font-size:12px; color:var(--muted); font-family:var(--mono); }
+  .dropoff .rule { width:1px; height:16px; background:var(--line); flex:none; }
+  .stage-row { position:relative; }
+  .stage-row:focus-visible { outline:none; }
+  .stage-row:focus-visible .track { box-shadow:0 0 0 3px var(--accent-soft); }
+
+  .tip { position:absolute; z-index:5; pointer-events:none; background:var(--ink); color:var(--ground); border-radius:8px; padding:9px 12px; font-size:12.5px; line-height:1.45; box-shadow:0 8px 24px rgba(0,0,0,.22); opacity:0; transform:translateY(4px); transition:opacity .14s, transform .14s; max-width:260px; }
+  .tip.on { opacity:1; transform:translateY(0); }
+  .tip b { font-family:var(--mono); font-weight:600; }
+
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1px; background:var(--line-soft); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .tile { background:var(--surface); padding:16px 18px; display:flex; flex-direction:column; gap:6px; }
+  .tile .t-label { font-size:12px; color:var(--muted); }
+  .tile .t-value { font-family:var(--sans); font-size:25px; font-weight:600; line-height:1.1; letter-spacing:-.02em; }
+  .tile .t-value.empty { color:var(--muted); font-weight:400; font-size:20px; }
+  .tile .t-sub { font-size:11.5px; color:var(--muted); font-family:var(--mono); }
+
+  .table-wrap { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:13px; min-width:460px; }
+  caption { text-align:left; color:var(--muted); font-size:12.5px; padding-bottom:10px; }
+  th, td { text-align:right; padding:9px 12px; border-bottom:1px solid var(--line-soft); }
+  th:first-child, td:first-child { text-align:left; }
+  thead th { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:500; border-bottom:1px solid var(--line); }
+  tbody td { font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  tbody td:first-child { font-family:var(--sans); color:var(--ink-2); }
+  tbody tr:last-child td { border-bottom:none; }
+  details summary { cursor:pointer; font-size:13px; color:var(--ink-2); padding:4px 0; }
+  details summary:focus-visible { outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
+  details[open] summary { margin-bottom:16px; }
+
+  .empty-state { border:1px dashed var(--line); border-radius:10px; padding:28px 20px; text-align:center; color:var(--muted); font-size:13.5px; }
+  .footnote { color:var(--muted); font-size:12.5px; line-height:1.6; max-width:70ch; }
+  .footnote code { font-family:var(--mono); font-size:11.5px; background:var(--surface-sub); border:1px solid var(--line-soft); border-radius:4px; padding:1px 5px; }
+  .chip { font-family:var(--mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; padding:2px 5px; border-radius:4px; border:1px solid var(--line); color:var(--muted); background:var(--surface-sub); }
+
+  /* login */
+  .gate { min-height:70vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .gate .card { width:100%; max-width:380px; }
+  .gate h1 { font-size:24px; margin-bottom:6px; }
+  .gate form { display:flex; flex-direction:column; gap:14px; margin-top:20px; }
+  .gate input {
+    font-family:var(--sans); font-size:16px; color:var(--ink);
+    background:var(--surface-sub); border:1px solid var(--line); border-radius:8px; padding:11px 13px; width:100%;
+  }
+  .gate input:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .gate .err { color:var(--danger); font-size:13px; margin:0; min-height:19px; }
+  .gate button { padding:11px 16px; font-size:14px; }
+  [hidden] { display:none !important; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+
+<!-- ── login gate ────────────────────────────────────────────────────────── -->
+<div class="gate" id="gate" hidden>
+  <div class="card">
+    <div class="eyebrow">Novera · private</div>
+    <h1>Sign in</h1>
+    <p class="sub" style="font-size:13.5px">This dashboard is for you only.</p>
+    <form id="login-form" autocomplete="on">
+      <input type="password" id="pw" name="password" placeholder="Password"
+             aria-label="Password" autocomplete="current-password" required>
+      <p class="err" id="login-err" role="alert"></p>
+      <button type="submit" id="login-btn">Unlock</button>
+    </form>
+  </div>
+</div>
+
+<!-- ── dashboard ─────────────────────────────────────────────────────────── -->
+<div class="wrap" id="app" hidden>
+
+  <header>
+    <div class="eyebrow">Novera · private</div>
+    <h1>Conversion rate and lifetime value</h1>
+    <p class="sub">
+      Live from PostHog. Counts are by person, so one visitor clicking the same
+      button twice is still one visitor.
+    </p>
+  </header>
+
+  <div class="card">
+    <div class="toolbar">
+      <div class="ranges" role="group" aria-label="Time range">
+        <button type="button" data-range="7">7 days</button>
+        <button type="button" data-range="30" aria-pressed="true">30 days</button>
+        <button type="button" data-range="90">90 days</button>
+      </div>
+      <div class="status">
+        <span class="dot" id="dot"></span>
+        <span id="freshness">Loading…</span>
+        <button type="button" id="refresh">Refresh</button>
+        <button type="button" id="logout">Sign out</button>
+      </div>
+    </div>
+    <div id="banner-slot" style="margin-top:16px"></div>
+  </div>
+
+  <div class="hero-row">
+    <section class="card hero" aria-labelledby="cr-h">
+      <div class="label" id="cr-h">Conversion rate</div>
+      <div class="figure empty" id="cr-figure">—</div>
+      <p class="caption" id="cr-caption">Visitors who ended up on the calendar.</p>
+      <p class="formula">bookings confirmed ÷ unique visitors</p>
+    </section>
+    <section class="card hero secondary" aria-labelledby="ltv-h">
+      <div class="label" id="ltv-h">Lifetime value</div>
+      <div class="figure empty" id="ltv-figure">—</div>
+      <p class="caption" id="ltv-caption">What one customer is worth, start to finish.</p>
+      <p class="formula">setup fee + (monthly revenue ÷ monthly churn)</p>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="funnel-h">
+    <div class="card-head">
+      <div>
+        <h2 id="funnel-h">Where visitors fall out</h2>
+        <p>Each step is a tracked event. The gap between two bars is the leak.</p>
+      </div>
+    </div>
+    <div id="funnel-mount"><div class="empty-state">Loading…</div></div>
+    <details id="table-details" hidden>
+      <summary>View as a table</summary>
+      <div class="table-wrap">
+        <table id="funnel-table">
+          <caption>Every value in the chart above, as text.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Step</th><th scope="col">People</th>
+              <th scope="col">Of visitors</th><th scope="col">Kept from previous</th>
+              <th scope="col">Lost</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="value-h">
+    <div class="card-head">
+      <div>
+        <h2 id="value-h">What that is worth</h2>
+        <p>Bookings become money via two figures the website cannot observe: your close rate and what a customer pays.</p>
+      </div>
+    </div>
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <section class="card" aria-labelledby="voice-h">
+    <div class="card-head">
+      <div>
+        <h2 id="voice-h">The voice agent</h2>
+        <p>A parallel route to a booking rather than a funnel step — Ava can book someone who never opens the calendar, so it is counted apart.</p>
+      </div>
+    </div>
+    <div class="tiles" id="voice-tiles"></div>
+  </section>
+
+  <p class="footnote">
+    <b>On the LTV formula.</b> PostHog derives lifetime value as ARPU ÷ churn.
+    Novera sells a build once and a receptionist monthly, so the setup fee is
+    added as a one-off: <code>setup + (monthly ÷ churn)</code>. A churn of zero
+    would make LTV infinite, so it is treated as unset.
+    <br><br>
+    <b>Where each number comes from.</b> The funnel and the voice figures are
+    measured on the site and read live from PostHog. The commercial inputs are
+    marked <span class="chip" id="src-chip">configured</span> when they come
+    from environment variables and <span class="chip">live</span> when a revenue
+    query supplies them. Nothing is estimated on your behalf.
+  </p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+  const gate = $('gate');
+  const app = $('app');
+
+  let range = 30;
+  let timer = 0;
+  let lastFetch = 0;
+
+  /* ── formatting ───────────────────────────────────────────────────────── */
+  const int = (n) => new Intl.NumberFormat('en-US').format(Math.round(n));
+  const pct = (n, dp) => n.toFixed(dp === undefined ? 1 : dp) + '%';
+  const money = (n) => new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', maximumFractionDigits: n < 100 ? 2 : 0
+  }).format(n);
+  const ok = (v) => typeof v === 'number' && Number.isFinite(v);
+
+  /* ── login ────────────────────────────────────────────────────────────── */
+  async function probe() {
+    try {
+      const r = await fetch('/api/login', { credentials: 'same-origin' });
+      const j = await r.json();
+      return Boolean(j && j.authed);
+    } catch (e) { return false; }
+  }
+
+  function showGate() {
+    app.hidden = true; gate.hidden = false;
+    stopPolling();
+    setTimeout(() => $('pw').focus(), 50);
+  }
+  function showApp() {
+    gate.hidden = true; app.hidden = false;
+    load(); startPolling();
+  }
+
+  $('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('login-btn'); const err = $('login-err');
+    btn.disabled = true; err.textContent = '';
+    try {
+      const r = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ password: $('pw').value })
+      });
+      if (r.ok) { $('pw').value = ''; showApp(); return; }
+      const j = await r.json().catch(() => ({}));
+      err.textContent = r.status === 401
+        ? 'That password is not right.'
+        : (j.error || 'Something went wrong. Try again.');
+    } catch (e) {
+      err.textContent = 'Could not reach the server.';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $('logout').addEventListener('click', async () => {
+    await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+    showGate();
+  });
+
+  /* ── polling ──────────────────────────────────────────────────────────── */
+  // The server caches for two minutes and PostHog allows 120 queries an hour,
+  // so a 60s tick mostly lands on cache and never threatens the budget.
+  function startPolling() {
+    stopPolling();
+    timer = setInterval(() => { if (!document.hidden) load(true); }, 60000);
+  }
+  function stopPolling() { if (timer) { clearInterval(timer); timer = 0; } }
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && !app.hidden && Date.now() - lastFetch > 60000) load(true);
+  });
+
+  /* ── fetch + render ───────────────────────────────────────────────────── */
+  async function load(quiet) {
+    if (!quiet) { $('freshness').textContent = 'Loading…'; }
+    try {
+      const r = await fetch('/api/metrics?range=' + range, { credentials: 'same-origin' });
+      if (r.status === 401) { showGate(); return; }
+      const j = await r.json();
+      lastFetch = Date.now();
+      if (!r.ok) { fail(j.error || ('HTTP ' + r.status)); return; }
+      render(j);
+    } catch (e) {
+      fail('Could not reach the server.');
+    }
+  }
+
+  function fail(msg) {
+    $('dot').className = 'dot err';
+    $('freshness').textContent = 'Failed';
+    $('banner-slot').innerHTML =
+      '<div class="banner err"><b>Could not load metrics.</b><br><code>' +
+      escapeHtml(msg) + '</code></div>';
+  }
+
+  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  const STAGES = [
+    { k: 'visitors', name: 'Landed on the site',    colour: 'var(--s1)' },
+    { k: 'cta',      name: 'Clicked “Book a call”', colour: 'var(--s2)' },
+    { k: 'page',     name: 'Reached the calendar',  colour: 'var(--s3)' },
+    { k: 'booked',   name: 'Confirmed a booking',   colour: 'var(--s4)' }
+  ];
+
+  const tip = document.createElement('div');
+  tip.className = 'tip'; tip.setAttribute('role', 'status');
+  document.body.appendChild(tip);
+
+  function showTip(host, html) {
+    tip.innerHTML = html; tip.classList.add('on');
+    const r = host.getBoundingClientRect(), t = tip.getBoundingClientRect();
+    let left = r.left + window.scrollX + 14;
+    left = Math.min(left, window.scrollX + document.documentElement.clientWidth - t.width - 12);
+    tip.style.left = Math.max(window.scrollX + 8, left) + 'px';
+    tip.style.top = (r.top + window.scrollY - t.height - 8) + 'px';
+  }
+  const hideTip = () => tip.classList.remove('on');
+  window.addEventListener('scroll', hideTip, { passive: true });
+
+  function ltvOf(v) {
+    if (!v) return null;
+    const setup = ok(v.setup) ? v.setup : null;
+    const monthly = ok(v.monthly) ? v.monthly : null;
+    const churn = ok(v.churn_pct) ? v.churn_pct : null;
+    if (setup === null && monthly === null) return null;
+    if (monthly !== null && monthly > 0 && (churn === null || churn <= 0)) return null;
+    const recurring = (monthly !== null && churn) ? monthly / (churn / 100) : 0;
+    return (setup || 0) + recurring;
+  }
+
+  function tile(label, value, sub, empty) {
+    return '<div class="tile"><span class="t-label">' + label + '</span>' +
+      '<span class="t-value' + (empty ? ' empty' : '') + '">' + value + '</span>' +
+      '<span class="t-sub">' + sub + '</span></div>';
+  }
+
+  function render(d) {
+    const f = d.funnel || {};
+    const v = d.value || {};
+    const voice = d.voice || {};
+
+    /* freshness + banners */
+    const dot = $('dot');
+    dot.className = 'dot' + (d.stale ? ' stale' : '');
+    const age = Math.round((Date.now() - new Date(d.generated_at).getTime()) / 1000);
+    $('freshness').textContent =
+      (d.stale ? 'Stale · ' : d.cached ? 'Cached · ' : 'Live · ') +
+      (age < 60 ? age + 's ago' : Math.round(age / 60) + 'm ago');
+
+    const banners = [];
+    if (d.stale && d.error) {
+      banners.push('<div class="banner err"><b>Showing the last good numbers.</b> ' +
+        'The latest refresh failed.<br><code>' + escapeHtml(d.error) + '</code></div>');
+    }
+    if (v.warning) {
+      banners.push('<div class="banner"><b>Revenue is not live.</b><br><code>' +
+        escapeHtml(v.warning) + '</code></div>');
+    }
+    if (!ok(v.setup) && !ok(v.monthly)) {
+      banners.push('<div class="banner"><b>No commercial figures configured.</b> ' +
+        'Set <code>LTV_SETUP_FEE</code>, <code>LTV_MONTHLY</code>, ' +
+        '<code>LTV_CHURN_PCT</code> and <code>CLOSE_RATE_PCT</code> to get LTV.</div>');
+    }
+    $('banner-slot').innerHTML = banners.join('');
+    $('src-chip').textContent = v.source || 'configured';
+
+    /* hero figures */
+    const crEl = $('cr-figure');
+    if (ok(f.visitors) && f.visitors > 0 && ok(f.booked)) {
+      const cr = (f.booked / f.visitors) * 100;
+      crEl.textContent = cr < 1 ? cr.toFixed(2) + '%' : pct(cr);
+      crEl.classList.remove('empty');
+      $('cr-caption').textContent =
+        int(f.booked) + ' of ' + int(f.visitors) + ' visitors booked, last ' + d.range_days + ' days.';
+    } else {
+      crEl.textContent = '—'; crEl.classList.add('empty');
+      $('cr-caption').textContent = 'No visitors recorded in this window yet.';
+    }
+
+    const L = ltvOf(v);
+    const ltvEl = $('ltv-figure');
+    if (L !== null && L > 0) {
+      ltvEl.textContent = money(L); ltvEl.classList.remove('empty');
+      $('ltv-caption').textContent = ok(v.churn_pct) && v.churn_pct > 0
+        ? 'Setup plus about ' + (1 / (v.churn_pct / 100)).toFixed(1) + ' months of retainer.'
+        : 'From the setup fee alone.';
+    } else {
+      ltvEl.textContent = '—'; ltvEl.classList.add('empty');
+      $('ltv-caption').textContent = ok(v.monthly)
+        ? 'Needs a monthly churn rate above zero.'
+        : 'Needs the setup fee and monthly revenue.';
+    }
+
+    /* funnel */
+    const mount = $('funnel-mount');
+    const top = f.visitors;
+    if (!ok(top) || top <= 0) {
+      mount.innerHTML = '<div class="empty-state">No visitors recorded in the last ' +
+        d.range_days + ' days.</div>';
+      $('table-details').hidden = true;
+    } else {
+      const box = document.createElement('div');
+      box.className = 'funnel';
+      const rows = [];
+
+      STAGES.forEach((s, i) => {
+        const n = f[s.k];
+        if (!ok(n)) return;
+        const ofTop = (n / top) * 100;
+
+        let prev = null;
+        for (let j = i - 1; j >= 0; j--) {
+          if (ok(f[STAGES[j].k])) { prev = f[STAGES[j].k]; break; }
+        }
+        const kept = prev && prev > 0 ? (n / prev) * 100 : null;
+        const lost = prev !== null ? Math.max(0, prev - n) : null;
+
+        if (lost !== null && lost > 0) {
+          const dd = document.createElement('div');
+          dd.className = 'dropoff';
+          dd.innerHTML = '<span class="rule"></span><span>' + int(lost) +
+            ' left here · ' + pct(100 - kept) + ' drop</span>';
+          box.appendChild(dd);
+        }
+
+        const row = document.createElement('div');
+        row.className = 'stage-row'; row.tabIndex = 0;
+        const stage = document.createElement('div');
+        stage.className = 'stage';
+        const head = document.createElement('div');
+        head.className = 'stage-top';
+        head.innerHTML =
+          '<span class="stage-name"><span class="swatch" style="background:' + s.colour + '"></span>' +
+          s.name + '</span><span><span class="stage-val">' + int(n) +
+          '</span> <span class="stage-pct">' + pct(ofTop) + '</span></span>';
+        const track = document.createElement('div');
+        track.className = 'track';
+        const fill = document.createElement('div');
+        fill.className = 'fill';
+        fill.style.background = s.colour;
+        fill.style.width = Math.max(0.4, Math.min(100, ofTop)) + '%';
+        track.appendChild(fill);
+        stage.appendChild(head); stage.appendChild(track); row.appendChild(stage);
+
+        const detail = '<b>' + int(n) + '</b> ' + (n === 1 ? 'person' : 'people') +
+          '<br>' + pct(ofTop) + ' of all visitors' +
+          (kept !== null ? '<br>' + pct(kept) + ' of the previous step' : '');
+        row.addEventListener('pointerenter', () => showTip(row, s.name + '<br>' + detail));
+        row.addEventListener('pointerleave', hideTip);
+        row.addEventListener('focus', () => showTip(row, s.name + '<br>' + detail));
+        row.addEventListener('blur', hideTip);
+
+        box.appendChild(row);
+        rows.push({ name: s.name, n, ofTop, kept, lost });
+      });
+
+      mount.innerHTML = ''; mount.appendChild(box);
+
+      const tbody = $('funnel-table').querySelector('tbody');
+      tbody.innerHTML = '';
+      rows.forEach((r) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + r.name + '</td><td>' + int(r.n) + '</td><td>' +
+          pct(r.ofTop) + '</td><td>' + (r.kept === null ? '—' : pct(r.kept)) +
+          '</td><td>' + (r.lost === null ? '—' : int(r.lost)) + '</td>';
+        tbody.appendChild(tr);
+      });
+      $('table-details').hidden = false;
+    }
+
+    /* value tiles */
+    const close = ok(v.close_pct) ? v.close_pct : null;
+    const customers = (ok(f.booked) && close !== null) ? f.booked * (close / 100) : null;
+    const out = [];
+    out.push(customers === null
+      ? tile('Customers won', '—', 'needs a close rate', true)
+      : tile('Customers won', int(customers), int(f.booked) + ' bookings × ' + pct(close, 0)));
+    out.push((customers === null || L === null || L <= 0)
+      ? tile('Value of those customers', '—', 'needs customers and LTV', true)
+      : tile('Value of those customers', money(customers * L),
+          int(customers) + ' × ' + money(L)));
+    out.push((customers !== null && L !== null && L > 0 && ok(f.visitors) && f.visitors > 0)
+      ? tile('Value per visitor', money((customers * L) / f.visitors), 'every visit is worth this much')
+      : tile('Value per visitor', '—', 'needs visitors, LTV and close rate', true));
+    out.push((ok(v.churn_pct) && v.churn_pct > 0)
+      ? tile('Average lifetime', (1 / (v.churn_pct / 100)).toFixed(1) + ' mo',
+          'at ' + pct(v.churn_pct, 0) + ' monthly churn')
+      : tile('Average lifetime', '—', 'needs a churn rate', true));
+    $('tiles').innerHTML = out.join('');
+
+    /* voice tiles */
+    const vo = [];
+    vo.push(!ok(voice.conversations)
+      ? tile('Conversations', '—', 'no calls recorded', true)
+      : tile('Conversations', int(voice.conversations), 'visitors who spoke to Ava'));
+    vo.push((ok(voice.conversations) && ok(f.visitors) && f.visitors > 0)
+      ? tile('Share of visitors', pct((voice.conversations / f.visitors) * 100), 'picked up the phone')
+      : tile('Share of visitors', '—', 'needs visitors and calls', true));
+    // Deliberately not bookings-per-conversation: dividing all bookings by
+    // voice calls would imply the calls caused them, and nothing in the data
+    // says which route a booking came through.
+    const secs = voice.median_seconds;
+    vo.push(ok(secs) && secs > 0
+      ? tile('Median call length',
+          secs >= 60
+            ? Math.floor(secs / 60) + 'm ' + String(Math.round(secs % 60)).padStart(2, '0') + 's'
+            : Math.round(secs) + 's',
+          'how long people actually stay on')
+      : tile('Median call length', '—', 'no completed calls', true));
+    $('voice-tiles').innerHTML = vo.join('');
+  }
+
+  /* ── range buttons ────────────────────────────────────────────────────── */
+  document.querySelectorAll('[data-range]').forEach((b) => {
+    b.addEventListener('click', () => {
+      range = Number(b.dataset.range);
+      document.querySelectorAll('[data-range]').forEach((o) =>
+        o.setAttribute('aria-pressed', String(o === b)));
+      load();
+    });
+  });
+  $('refresh').addEventListener('click', () => load());
+
+  /* ── boot ─────────────────────────────────────────────────────────────── */
+  probe().then((authed) => { authed ? showApp() : showGate(); });
+})();
+</script>
+</body>
+</html>
