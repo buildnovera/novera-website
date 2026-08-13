@@ -274,16 +274,12 @@
         <div class="beams" data-beams></div>
         <div class="reviews">
           <div class="eyebrow reveal">Reviews</div>
-          <div class="zero reveal d1">0</div>
-          <div class="stars reveal d1" aria-label="Zero reviews">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#9BC1FF" stroke-width="1"><path d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.6 6.1 20.6l1.2-6.5L2.5 9.5l6.6-.9z"/></svg>
-            <svg viewBox="0 0 24 24" fill="none" stroke="#9BC1FF" stroke-width="1"><path d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.6 6.1 20.6l1.2-6.5L2.5 9.5l6.6-.9z"/></svg>
-            <svg viewBox="0 0 24 24" fill="none" stroke="#9BC1FF" stroke-width="1"><path d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.6 6.1 20.6l1.2-6.5L2.5 9.5l6.6-.9z"/></svg>
-            <svg viewBox="0 0 24 24" fill="none" stroke="#9BC1FF" stroke-width="1"><path d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.6 6.1 20.6l1.2-6.5L2.5 9.5l6.6-.9z"/></svg>
-            <svg viewBox="0 0 24 24" fill="none" stroke="#9BC1FF" stroke-width="1"><path d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.6 6.1 20.6l1.2-6.5L2.5 9.5l6.6-.9z"/></svg>
-          </div>
-          <p class="reveal d2">No reviews yet. We'd rather show you a real one than borrow a logo wall — the first review here will be earned. Swipe the stars.</p>
+          <div class="zero reveal d1" id="rv-count">0</div>
+          <div class="rv-average reveal d1" id="rv-average" hidden></div>
+          <div class="stars reveal d1" id="section-stars" aria-label="Rate Novera"></div>
+          <p class="reveal d2" id="rv-blurb">No reviews yet. We'd rather show you a real one than borrow a logo wall — the first review here will be earned. Swipe the stars.</p>
           <button class="btn magnetic reveal d3" type="button" data-review-open><span>Be the first</span><span class="arw">&#8594;</span></button>
+          <div class="rv-list" id="rv-list"></div>
         </div>
       </div>
     </div>
@@ -413,6 +409,7 @@
 </div>
 
 <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+<div id="gold-flash" aria-hidden="true"></div>
 
 <!-- Rotating voice-agent invitation -->
 <div id="voice-invite" role="button" tabindex="0" aria-live="polite">

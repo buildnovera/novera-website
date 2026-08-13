@@ -636,10 +636,12 @@ footer{
 .stars{ display:flex; gap:12px; position:relative }
 .stars.interactive{ cursor:pointer; touch-action:none; padding:6px 2px; border-radius:14px }
 .stars.interactive:focus-visible{ outline:2px solid var(--brass); outline-offset:6px }
+/* Transform is driven per-frame from JS (spring physics), so there is no CSS
+   transition on it — the two would fight. Only filter/opacity transition here. */
 .stars .star{
   position:relative; display:block; width:26px; height:26px; flex:none;
-  transform-origin:50% 55%;
-  transition:transform .35s var(--ease), filter .35s var(--ease);
+  transform-origin:50% 60%; will-change:transform;
+  transition:filter .4s var(--ease);
 }
 .stars svg{ width:100%; height:100%; display:block; overflow:visible }
 .stars .star .s-off,
@@ -647,25 +649,15 @@ footer{
 .stars .star .s-on{ opacity:0 }
 .stars .star.lit .s-off{ opacity:0 }
 .stars .star.lit .s-on{ opacity:1 }
-.stars .star.lit{
-  transform:scale(1.16) rotate(-4deg);
-  filter:drop-shadow(0 0 10px rgba(228,196,142,.55));
-}
-.stars .star.pop{ animation:starPop .5s var(--ease) }
-@keyframes starPop{
-  0%{ transform:scale(1) rotate(0) }
-  38%{ transform:scale(1.5) rotate(9deg) }
-  70%{ transform:scale(1.08) rotate(-4deg) }
-  100%{ transform:scale(1.16) rotate(-4deg) }
-}
-/* 4–5 stars earns the bigger reaction */
+.stars .star.lit{ filter:drop-shadow(0 0 10px rgba(228,196,142,.55)) }
+/* 4 stars brightens; 5 goes fully molten */
 .stars.rave .star.lit{
   filter:drop-shadow(0 0 16px rgba(228,196,142,.9)) drop-shadow(0 0 34px rgba(228,196,142,.45));
-  animation:starShimmer 1.5s var(--ease) infinite;
 }
-@keyframes starShimmer{
-  0%,100%{ transform:scale(1.16) rotate(-4deg) }
-  50%{ transform:scale(1.26) rotate(3deg) }
+.stars.rave-max .star.lit{
+  filter:drop-shadow(0 0 20px rgba(255,235,200,1))
+         drop-shadow(0 0 46px rgba(228,196,142,.7))
+         drop-shadow(0 0 80px rgba(228,196,142,.35));
 }
 .stars .glow{
   position:absolute; left:50%; top:50%; width:230px; height:230px; margin:-115px 0 0 -115px;
@@ -752,3 +744,72 @@ footer{
 .rv-done-actions .btn{ width:100%; justify-content:center; margin-top:0 }
 .rv-done #rv-copy-note{ margin-top:14px }
 .rv-done #rv-done-close{ margin-top:18px; width:100%; justify-content:center }
+
+/* ============================================================
+   Reviews — five-star flash, average, saved list
+   ============================================================ */
+.stars.rave-max .glow{
+  opacity:1;
+  background:radial-gradient(circle, rgba(255,235,200,.5), rgba(228,196,142,.22) 40%, transparent 70%);
+}
+
+/* Warm full-screen wash that lands with the roar */
+#gold-flash{
+  position:fixed; inset:0; z-index:2147483015; pointer-events:none; opacity:0;
+  background:
+    radial-gradient(120% 80% at 50% 50%, rgba(228,196,142,.30), transparent 62%),
+    radial-gradient(160% 100% at 50% 120%, rgba(255,214,150,.22), transparent 60%);
+  mix-blend-mode:screen;
+}
+#gold-flash.on{ animation:goldFlash 1.3s var(--ease) forwards }
+@keyframes goldFlash{
+  0%{ opacity:0 }
+  12%{ opacity:1 }
+  100%{ opacity:0 }
+}
+
+/* Average rating under the count */
+.rv-average{
+  display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap;
+  margin-top:-6px;
+}
+.rv-avg-num{ font-family:var(--display); font-size:30px; color:var(--brass); line-height:1 }
+.rv-avg-stars{ display:inline-flex; gap:5px }
+.rv-avg-stars svg{ width:17px; height:17px }
+.rv-avg-stars svg.off{ opacity:.3 }
+.rv-avg-of{
+  font-family:var(--mono); font-size:10px; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--mute);
+}
+
+/* Saved reviews */
+.rv-list{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(250px,1fr));
+  gap:14px; margin-top:34px; width:100%; text-align:left;
+}
+.rv-list:empty{ display:none }
+.rv-item{
+  border:1px solid var(--line); border-radius:16px; padding:20px 20px 18px;
+  background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012));
+  display:flex; flex-direction:column; gap:10px;
+  animation:rvItemIn .7s var(--ease) both;
+}
+@keyframes rvItemIn{
+  from{ opacity:0; transform:translateY(14px) }
+  to{ opacity:1; transform:none }
+}
+.rv-item-stars{ display:inline-flex; gap:4px }
+.rv-item-stars svg{ width:14px; height:14px }
+.rv-item-stars svg.off{ opacity:.28 }
+.rv-item blockquote{
+  font-size:14.5px; line-height:1.65; color:var(--ice); font-weight:300;
+}
+.rv-item figcaption{
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--mute);
+}
+
+@media (prefers-reduced-motion: reduce){
+  #gold-flash.on{ animation:none }
+  .rv-item{ animation:none }
+}

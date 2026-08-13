@@ -479,8 +479,10 @@ void main(){ vec4 c; mainImage(c, vUv * iResolution.xy); gl_FragColor = c; }`;
       entries.forEach((e) => {
         if (!e.isIntersecting) return;
         sio.disconnect();
+        // Opacity only — reviews.js drives .star transforms every frame with
+        // its own spring, and two writers on transform would fight.
         animate('.stars .star', {
-          opacity: [0, 1], scale: [0.7, 1], rotate: [-18, 0],
+          opacity: [0, 1],
           duration: 900, ease: 'out(3)', delay: stagger(90)
         });
       });
